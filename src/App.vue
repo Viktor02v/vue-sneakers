@@ -1,21 +1,46 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, reactive, ref, watch } from 'vue';
 import axios from 'axios';
 
 import Header from './components/Header.vue'
 import CardList from './components/CardList.vue'
 import Drawer from './components/Drawer.vue'
 
-const items = ref([]);
+const items = ref([])
 
-onMounted(async () => {
+const filters = reactive({
+	sortBy: 'title',
+	searchQuery: '',
+})
+const onChange = (e) => {
+	filters.sortBy = (e.target.value)
+}
+const onChangeQuery = (e) => {
+	filters.searchQuery = (e.target.value)
+}
+
+const fetchItems = async () => {
 	try {
-		const { data } = await axios.get('https://ed0472d2c8c161f9.mokky.dev/items')
+		const params = {
+	      sortBy: filters.sortBy,
+      }
+
+		if (filters.searchQuery) {
+			params.title = `*${filters.searchQuery}*`
+		}
+		const { data } = await axios.get(
+			`https://ed0472d2c8c161f9.mokky.dev/items`,
+			{
+				params
+			})
 		items.value = data;
 	} catch (error) {
 		console.log(error)
 	}
-})
+}
+
+onMounted(fetchItems)
+watch(filters, fetchItems)
 </script>
 
 <template>
@@ -30,15 +55,15 @@ onMounted(async () => {
 
 				<h2 class="text-3xl font-bold mb-8 ">Shoes list</h2>
 				<div class="flex gap-4">
-					<select class="py-2 px-3 border rounded-md outline-none" name="" id="">
-						<option value="">By name</option>
-						<option value="">By price (Cheap)</option>
-						<option value="">By price (Expensive)</option>
+					<select @change="onChange" class="py-2 px-3 border rounded-md outline-none" name="" id="">
+						<option value="title">By name</option>
+						<option value="price">By price (Cheap)</option>
+						<option value="-price">By price (Expensive)</option>
 					</select>
 
 					<div class="relative">
 						<img class="absolute top-2.5 left-4" src="/search.svg">
-						<input placeholder="Search"
+						<input @input="onChangeQuery" placeholder="Search"
 							class=" border rounded-md pl-11 py-1.5 pr-4 outline-none focus:border-gray-500" type="text">
 					</div>
 				</div>
