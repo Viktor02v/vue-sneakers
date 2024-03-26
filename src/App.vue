@@ -5,6 +5,7 @@ import axios from 'axios';
 import Header from './components/Header.vue'
 import CardList from './components/CardList.vue'
 import Drawer from './components/Drawer.vue'
+import CssSyntaxError from 'postcss/lib/css-syntax-error';
 
 const items = ref([])
 
@@ -12,18 +13,63 @@ const filters = reactive({
 	sortBy: 'title',
 	searchQuery: '',
 })
+
 const onChange = (e) => {
 	filters.sortBy = (e.target.value)
 }
+
 const onChangeQuery = (e) => {
 	filters.searchQuery = (e.target.value)
 }
 
+// Get the Data For Favorites(for Tabs)
+const fetchFavorites = async () => {
+	try {
+		const { data: favorites } = await axios.get(`https://ed0472d2c8c161f9.mokky.dev/favorites`)
+		items.value = items.value.map(item => {
+			const favorite = favorites.find(favorite => favorite.productId === item.id);
+
+			if (!favorite) {
+				return item;
+			}
+
+			return {
+				...item,
+				isFavorite: true,
+				favoriteId: favorite.id,
+			}
+		});
+	} catch (error) {
+		console.log(error)
+	}
+}
+
+const addToFavorites = async (item) => {
+	try {
+		
+		if (!item.isFavorite) {
+			const obj = {
+				productId: item.id,
+			}
+			item.isFavorite = true
+			const { data } = await axios.post(`https://ed0472d2c8c161f9.mokky.dev/favorites`, obj);
+			item.favoriteId = data.id;
+		} else {
+			item.isFavorite = false
+			await axios.delete(`https://ed0472d2c8c161f9.mokky.dev/favorites/${item.favoriteId}`);
+			item.favoriteId = null;
+
+		}
+	} catch (error) {
+		console.log(error)
+	}
+}
+// Get The Data For Items And Filters
 const fetchItems = async () => {
 	try {
 		const params = {
-	      sortBy: filters.sortBy,
-      }
+			sortBy: filters.sortBy,
+		}
 
 		if (filters.searchQuery) {
 			params.title = `*${filters.searchQuery}*`
@@ -33,14 +79,23 @@ const fetchItems = async () => {
 			{
 				params
 			})
-		items.value = data;
+		items.value = data.map((obj) => ({
+			...obj,
+			isFavorite: false,
+			favoriteId: null,
+			isAdded: false
+		}));
 	} catch (error) {
 		console.log(error)
 	}
 }
 
-onMounted(fetchItems)
-watch(filters, fetchItems)
+onMounted(async () => {
+	await fetchItems();
+	await fetchFavorites()
+});
+watch(filters, fetchItems);
+
 </script>
 
 <template>
@@ -70,7 +125,7 @@ watch(filters, fetchItems)
 			</div>
 
 			<div class="mt-10">
-				<CardList :items="items" />
+				<CardList :items="items" @addToFavorites="addToFavorites" />
 			</div>
 		</div>
 
