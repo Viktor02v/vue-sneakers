@@ -1,18 +1,52 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue';
+import { onMounted, provide, reactive, ref, watch, computed } from 'vue';
 import axios from 'axios';
 
 import Header from './components/Header.vue'
 import CardList from './components/CardList.vue'
 import Drawer from './components/Drawer.vue'
-import CssSyntaxError from 'postcss/lib/css-syntax-error';
 
-const items = ref([])
+const items = ref([]);
+
+const cart = ref([]);
+
+const drawerOpen = ref();
+
+const totalPrice = computed(
+	() =>cart.value.reduce((acc, item) => acc + item.price, 0))  //For Header
+
+const vatPrice = computed(() => Math.round((totalPrice.value * 5) / 100))
+
+const openDrawer = () => {
+	drawerOpen.value = true
+}
+const closeDrawer = () => {
+	drawerOpen.value = false
+}
+
 
 const filters = reactive({
 	sortBy: 'title',
-	searchQuery: '',
+	searchQuery: ''
 })
+
+const addToCart = (item) => {
+	cart.value.push(item)
+	item.isAdded = true
+}
+
+const removeFromCart = (item) => {
+	cart.value.splice(cart.value.indexOf(item), 1)
+	item.isAdded = false
+}
+
+const onClickAddPlus = (item) => {
+	if (!item.isAdded) {
+		addToCart(item)
+	} else {
+		removeFromCart(item)
+	}
+}
 
 const onChange = (e) => {
 	filters.sortBy = (e.target.value)
@@ -46,7 +80,7 @@ const fetchFavorites = async () => {
 
 const addToFavorites = async (item) => {
 	try {
-		
+
 		if (!item.isFavorite) {
 			const obj = {
 				productId: item.id,
@@ -96,13 +130,21 @@ onMounted(async () => {
 });
 watch(filters, fetchItems);
 
+provide('cart', {
+	cart,
+	closeDrawer,
+	openDrawer,
+	addToCart,
+	removeFromCart,
+	totalPrice,
+})
 </script>
 
 <template>
-	<!-- <Drawer /> -->
+	<Drawer v-if="drawerOpen" :total-price="totalPrice" :vat-price="vatPrice" />
 
 	<div class="w-4/5 m-auto bg-white rounded-xl	shadow-xl mt-14">
-		<Header />
+		<Header :total-price="totalPrice" @open-drawer="openDrawer" />
 
 		<div class="p-10">
 
@@ -125,7 +167,7 @@ watch(filters, fetchItems);
 			</div>
 
 			<div class="mt-10">
-				<CardList :items="items" @addToFavorites="addToFavorites" />
+				<CardList :items="items" @add-to-favorites="addToFavorites" @add-to-cart="onClickAddPlus" />
 			</div>
 		</div>
 
