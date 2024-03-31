@@ -2,10 +2,14 @@
 import DrawerHead from './DrawerHead.vue'
 import BasketItemList from './BasketItemList.vue'
 
+const emit = defineEmits(['createOrder'])
+
 defineProps({
 	totalPrice: Number,
 	vatPrice: Number,
+	buttonDisabled: Boolean,
 })
+
 </script>
 <template>
 	<div class="fixed top-0 left-0 w-full h-full bg-black/50 z-10 ">
@@ -31,7 +35,7 @@ defineProps({
 					<b>{{ vatPrice }} UAN</b>
 				</div>
 
-				<button disabled="" class="mt-4 transition disabled:bg-slate-300 bg-lime-500 w-full rounded-xl py-3 text-white hover:bg-lime-600 active:bg-lime-700 cursor-pointer">Make an order </button>
+				<button @click="emit('createOrder')" :disabled="buttonDisabled" class="mt-4 transition disabled:bg-slate-300 bg-lime-500 w-full rounded-xl py-3 text-white hover:bg-lime-600 active:bg-lime-700 cursor-pointer">Make an order </button>
 			</div>
 		</div>
 	</div>
