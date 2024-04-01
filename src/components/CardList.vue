@@ -14,11 +14,9 @@ const emit = defineEmits(['addToFavorites', 'addToCart']);
 </script>
 
 <template>
-	<div class="grid grid-cols-4 gap-5">
-
+	<div class="grid grid-cols-4 gap-5" v-auto-animate>
 		<Card v-for="item in items" :key="item.id" :id="item.id" :title="item.title" :price="item.price"
 			:imageUrl="item.imageUrl" :onClickAdd="()=> emit('addToCart', item)" :onClickFavorites="()=>emit('addToFavorites', item)"
 			:isFavorite="item.isFavorite" :isAdded="item.isAdded"/>
-
 	</div>
 </template>
